@@ -1,0 +1,53 @@
+---
+resources:
+- name: vsphere_collector_repo
+  type: git
+  source:
+    uri: https://github.com/EMC-Underground/customer_example_collector_schedule.git
+
+jobs:
+- name: job_deploy_vsphere_collector
+  public: true
+  plan:
+  - get: vsphere_collector_repo
+    trigger: true
+  - task: update-vsphere_collector
+    params:
+      DNS_SUFFIX: ((dnssuffix))
+      DOCKER_HOST: ((dockerhost))
+      PERSISTENCE_DRIVER: ((persistence_driver))
+      NFS_SERVER: ((nfs_server))
+      NFS_SHARE: ((nfs_share))
+      DOCKER_SERVICE: vsphere
+      DOCKER_STACK: collector_overlord
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: nctiggy/image_seti_builder
+          tag: latest
+      inputs:
+        - name: vsphere_collector_repo
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          cd vsphere_collector_repo
+          export COMMIT_MESSAGE=`git log -1 --oneline --format=%s`
+          export BRANCH_NAME=`git branch -a | awk 'FNR==2{print $1}'`
+          cat docker-compose.yml.tmpl | python3 variables_injector.py > docker-compose.yml
+          cat << EOM
+          Deploying Docker Stack
+          REPO Info:
+            Branch Name:          ${BRANCH_NAME}
+            Commit Message:       ${COMMIT_MESSAGE}
+          Docker Info:
+            Stack Name:           ${BRANCH_NAME}
+            Service Name:         ${DOCKER_SERVICE}
+            Persistence Driver:   ${PERSISTENCE_DRIVER}
+            Docker Host:          ${DOCKER_HOST}
+            Service URL:          http://${DOCKER_STACK}.${DNS_SUFFIX}
+          EOM
+          bash <(curl -fsSL https://raw.githubusercontent.com/EMC-Underground/service_overlord/master/service_overlord.sh) create_web --stack ${DOCKER_STACK} --service ${DOCKER_SERVICE} --docker_host ${DOCKER_HOST} --dns_suffix ${DNS_SUFFIX}

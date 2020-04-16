@@ -1,0 +1,26 @@
+version: '3.6'
+
+services:
+  {{env['DOCKER_SERVICE']}}:
+    image: nctiggy/collector-overlord
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      CONFIG_FILE: '/etc/overlord-config.yml'
+      LOG_LEVEL: 'INFO'
+      SCHEDULE_MINUTES: 1440
+    configs:
+      - source: overlord_config
+        target: /etc/overlord-config.yml
+        mode: 444
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+        delay: 5m
+
+configs:
+  overlord_config:
+    file: ./config-file.yml
