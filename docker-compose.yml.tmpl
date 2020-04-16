@@ -2,7 +2,7 @@ version: '3.6'
 
 services:
   {{env['DOCKER_SERVICE']}}:
-    image: nctiggy/collector-overlord
+    image: nctiggy/collector_overlord
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
