@@ -9,4 +9,5 @@ output:
   target_api_url:
     hypervisors: 'https://storageapi.bellevuelab.isus.emc.com/storage/v1/array'
 containers:
-  vsphere: 'nctiggy/customer_collector_example'
+  vsphere:
+    - 'nctiggy/customer_collector_example'
